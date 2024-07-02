@@ -1,0 +1,39 @@
+--- st.c
++++ st.c
+@@ -2549,16 +2721,8 @@ tdumpsel(void)
+ void
+ tdumpline(int n)
+ {
+-	char buf[UTF_SIZ];
+-	const Glyph *bp, *end;
+-
+-	bp = &term.line[n][0];
+-	end = &bp[MIN(tlinelen(n), term.col) - 1];
+-	if (bp != end || bp->u != ' ') {
+-		for ( ; bp <= end; ++bp)
+-			tprinter(buf, utf8encode(bp->u, buf));
+-	}
+-	tprinter("\n", 1);
++	char str[(term.col + 1) * UTF_SIZ];
++  tprinter(str, tgetline(str, &term.line[n][0]));
+ }
+ 
+ void
+@@ -2945,7 +3109,8 @@ check_control_code:
+ 		 */
+ 		return;
+ 	}
+-	if (selected(term.c.x, term.c.y))
++	/* selected() takes relative coordinates */
++	if (selected(term.c.x + term.scr, term.c.y + term.scr))
+ 		selclear();
+ 
+ 	gp = &term.line[term.c.y][term.c.x];
+@@ -2980,6 +3145,7 @@ check_control_code:
+ 	if (term.c.x+width < term.col) {
+ 		tmoveto(term.c.x+width, term.c.y);
+ 	} else {
++		term.wrapcwidth[IS_SET(MODE_ALTSCREEN)] = width;
+ 		term.c.state |= CURSOR_WRAPNEXT;
+ 	}
+ }
